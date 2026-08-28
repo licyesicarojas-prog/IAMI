@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corrector IAMI — Lic. Yesica Rojas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --azul: #2c5f6f;
+    --azul-claro: #e8f2f4;
+    --verde: #5a9b7c;
+    --amarillo: #d9a441;
+    --rojo: #c1553e;
+    --texto: #2c2c2c;
+    --gris: #6b6b6b;
+    --borde: #d8dfe1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #f4f6f7;
+    color: var(--texto);
+    margin: 0;
+    padding: 0 0 60px 0;
+  }
+  header{
+    background: linear-gradient(135deg, var(--azul), #3a7d8f);
+    color: white;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1{ margin: 0 0 4px 0; font-size: 1.5rem; }
+  header p{ margin: 0; opacity: 0.9; font-size: 0.9rem; }
+  .container{ max-width: 900px; margin: 20px auto; padding: 0 16px; }
+  .card{
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .datos-paciente{ display: flex; flex-wrap: wrap; gap: 12px; }
+  .datos-paciente div{ flex: 1; min-width: 200px; }
+  label{ display:block; font-size:0.85rem; color: var(--gris); margin-bottom:4px; }
+  input[type=text], input[type=date]{
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  .leyenda{
+    background: var(--azul-claro);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .leyenda b{ color: var(--azul); }
+  .escala-ref{
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;
+    background:white; border-radius:6px; padding:8px 10px; margin-top:10px; font-size:0.78rem; color:var(--gris);
+  }
+  .item{
+    border-bottom: 1px solid var(--borde);
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .item:last-child{ border-bottom: none; }
+  .item-num{
+    background: var(--azul);
+    color: white;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+  .item-texto{ flex: 1 1 340px; font-size: 0.9rem; }
+  .item-opciones{ display:flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
+  .item-opciones button{
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+  .item-opciones button:hover{ background: var(--azul-claro); }
+  .item-opciones button.activo{
+    background: var(--azul);
+    color: white;
+    border-color: var(--azul);
+  }
+  .acciones{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  button.principal{
+    background: var(--verde);
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.principal:hover{ background: #4a8a6b; }
+  button.secundario{
+    background: white;
+    color: var(--azul);
+    border: 1px solid var(--azul);
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  button.secundario:hover{ background: var(--azul-claro); }
+  #alerta-incompleto{
+    display:none;
+    background: #fdeeea;
+    color: var(--rojo);
+    border: 1px solid #f0c4b8;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+  }
+  #resultados{ display:none; }
+  table.resultados{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.resultados th, table.resultados td{
+    text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--borde);
+  }
+  table.resultados th{ color: var(--gris); font-weight: 600; font-size: 0.82rem; }
+  .banda{
+    display:inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 0.8rem; font-weight: 600; color: white;
+  }
+  .banda-bajo{ background: var(--rojo); }
+  .banda-medio{ background: var(--amarillo); }
+  .banda-alto{ background: var(--verde); }
+  .analisis-escala{
+    margin-bottom: 16px; padding: 12px 14px; border-radius: 8px;
+    background: #fafbfb; border-left: 4px solid var(--borde);
+  }
+  .analisis-escala.bajo{ border-left-color: var(--rojo); }
+  .analisis-escala.medio{ border-left-color: var(--amarillo); }
+  .analisis-escala.alto{ border-left-color: var(--verde); }
+  .analisis-escala h4{ margin: 0 0 4px 0; font-size: 0.95rem; color: var(--azul); }
+  .analisis-escala p{ margin: 0; font-size: 0.88rem; line-height: 1.5; }
+  .resumen-general{
+    background: var(--azul-claro); padding: 14px 16px; border-radius: 8px;
+    font-size: 0.9rem; line-height: 1.6; margin-bottom: 18px;
+  }
+  .disclaimer{
+    font-size: 0.78rem; color: var(--gris); background: #f4f6f7;
+    border: 1px dashed var(--borde); padding: 10px 12px; border-radius: 8px; margin-top: 14px;
+  }
+  canvas{ max-width: 100%; }
+  .progreso{
+    position: sticky; top: 0; background: white; z-index: 10;
+    padding: 8px 16px; border-bottom: 1px solid var(--borde);
+    font-size: 0.85rem; color: var(--gris); text-align: center;
+  }
+  @media print{
+    header, .acciones, .progreso, #form-iami { display:none; }
+    body{ background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Corrector automático — IAMI</h1>
+  <p>Inventario de Autoeficacia en Inteligencias Múltiples · Lic. Yesica Rojas, Psicopedagoga</p>
+</header>
+
+<div class="progreso" id="barraProgreso">0 / 69 ítems cargados</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="datos-paciente">
+      <div>
+        <label for="nombrePaciente">Paciente</label>
+        <input type="text" id="nombrePaciente" placeholder="Nombre y apellido">
+      </div>
+      <div>
+        <label for="fechaAdmin">Fecha de administración</label>
+        <input type="date" id="fechaAdmin">
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="form-iami">
+    <div class="leyenda" style="background:#fdf6e8;">
+      <b>¿El paciente completó el cuestionario en la versión para pacientes y te mandó un código?</b>
+      Pegalo acá y tocá "Importar" para que se autocompleten las 69 respuestas.
+      <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+        <input type="text" id="codigoImportar" placeholder="Pegá acá el código que empieza con IAMI-" style="flex:1; min-width:220px;">
+        <button class="secundario" style="padding:8px 16px;" onclick="importarCodigo()">Importar</button>
+      </div>
+      <p id="importarMsg" style="display:none; margin:8px 0 0 0; font-size:0.85rem;"></p>
+    </div>
+    <div class="leyenda">
+      Marcá el <b>puntaje directo</b> (0 a 10) que asignó el/la paciente en cada ítem:
+      <div class="escala-ref">
+        <span><b>10</b> Totalmente seguro</span>
+        <span><b>7-9</b> Bastante seguro</span>
+        <span><b>5-6</b> Relativamente seguro</span>
+        <span><b>1-4</b> Escasamente seguro</span>
+        <span><b>0</b> No puede hacerlo</span>
+      </div>
+      <br>
+      No hay ítems invertidos en este instrumento — se carga tal cual figura en la hoja de respuestas.
+      Los ítems están en orden 1 a 69; los resultados se reorganizan por inteligencia al corregir.
+    </div>
+    <div id="itemsContainer"></div>
+  </div>
+
+  <div id="alerta-incompleto">Todavía faltan ítems por completar. Revisá los que quedaron sin marcar antes de corregir.</div>
+
+  <div class="acciones">
+    <button class="principal" onclick="corregir()">Corregir y ver resultados</button>
+    <button class="secundario" onclick="reiniciar()">Reiniciar formulario</button>
+    <button class="secundario" onclick="window.print()" id="btnImprimir" style="display:none;">Imprimir / guardar PDF</button>
+  </div>
+
+  <div class="card" id="resultados">
+    <h2 style="color:var(--azul); margin-top:0;">Resultados</h2>
+    <div class="resumen-general" id="resumenGeneral"></div>
+
+    <canvas id="graficoIami" height="140"></canvas>
+
+    <table class="resultados" style="margin-top:20px;">
+      <thead>
+        <tr><th>Inteligencia</th><th>Puntaje bruto</th><th>Percentil</th><th>Banda</th></tr>
+      </thead>
+      <tbody id="tablaResultados"></tbody>
+    </table>
+
+    <h3 style="color:var(--azul); margin-top:26px;">Análisis por área</h3>
+    <div id="analisisContainer"></div>
+
+    <div class="disclaimer">
+      <b>Nota metodológica:</b> los percentiles se calculan interpolando sobre el baremo IAMI (Pérez, Beltramino
+      y Cupani, 2003), con percentiles 1, 5, 10, 25, 40, 50, 60, 70, 75, 80, 90, 95 y 99 por área.
+      Las bandas Bajo (Pc &lt; 25) / Medio (Pc 25-74) / Alto (Pc ≥ 75) siguen el criterio percentilar estándar.
+      El IAMI mide <b>autoeficacia percibida</b> (confianza subjetiva en la propia habilidad), no habilidad real
+      medida objetivamente — es un insumo para la orientación vocacional, a integrar con otros datos
+      (intereses, rendimiento académico, entrevista), no un diagnóstico de aptitud en sí mismo.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const items = [
+  "Analizar obras literarias (novelas, por ejemplo)",
+  "Crear composiciones literarias (cuento o poesía, por ejemplo)",
+  "Reconocer géneros y estilos literarios (poesía modernista, por ejemplo)",
+  "Extraer las ideas principales de un texto",
+  "Redactar con corrección gramatical (uso apropiado de los tiempos verbales, por ejemplo)",
+  "Escribir textos periodísticos sobre temas de actualidad (colaborando en una publicación escolar, por ejemplo)",
+  "Redactar monografías (sobre historia contemporánea, por ejemplo)",
+  "Expresarse con un vocabulario amplio y fluido",
+  "Resolver problemas de la Física (velocidad de desplazamiento de la luz o el sonido, por ejemplo)",
+  "Obtener notas altas en Matemática",
+  "Interpretar estadísticas de encuestas o censos (índices de mortalidad o natalidad, por ejemplo)",
+  "Resolver problemas geométricos (superficies, por ejemplo)",
+  "Realizar mentalmente operaciones matemáticas (porcentajes, por ejemplo)",
+  "Resolver ecuaciones de la Química",
+  "Resolver problemas de cálculo (consumo de combustible por kilómetro recorrido, por ejemplo)",
+  "Utilizar calculadoras científicas",
+  "Realizar tareas de contabilidad (cálculo de sueldos complementarios, por ejemplo)",
+  "Dibujar motivos con precisión (una persona, por ejemplo)",
+  "Dibujar objetos en tres dimensiones (figuras geométricas, por ejemplo)",
+  "Emplear la perspectiva en el dibujo (representación de paisajes, por ejemplo)",
+  "Interpretar planos (de una vivienda, por ejemplo)",
+  "Diseñar construcciones (con juegos de armar, por ejemplo)",
+  "Diseñar maquetas (de aviones, por ejemplo)",
+  "Realizar diseño gráfico (tarjetas o afiches, por ejemplo)",
+  "Hacer planos (de maquinaria, por ejemplo)",
+  "Ejecutar un instrumento musical como solista",
+  "Leer partituras musicales",
+  "Componer música",
+  "Cantar en armonía junto a otras personas (coros, por ejemplo)",
+  "Cantar como solista entonadamente (sin desafinar)",
+  "Evaluar la afinación de un instrumento musical",
+  "Ejecutar un instrumento en un grupo musical",
+  "Escuchar una melodía sencilla y transcribirla en una partitura",
+  "Realizar variaciones o arreglos de un tema musical",
+  "Aconsejar a conocidos con problemas personales",
+  "Reconocer rápidamente los deseos e intenciones de otras personas",
+  "Conducir un grupo de personas",
+  "Exponer un tema en público (un debate o una clase, por ejemplo)",
+  "Actuar en representaciones dramáticas (obra teatral, por ejemplo)",
+  "Defender los derechos de otras personas (compañeros de colegio, por ejemplo)",
+  "Entrevistarse con personas de mayor jerarquía (directivos escolares, por ejemplo)",
+  "Promocionar un producto o servicio",
+  "Iniciar y mantener relaciones con desconocidos",
+  "Practicar algún deporte de esfuerzo prolongado (ciclismo o natación, por ejemplo)",
+  "Realizar ejercicios físicos de precisión (encestar en un aro, por ejemplo)",
+  "Realizar carreras de velocidad",
+  "Realizar ejercicios físicos de resistencia (abdominales, por ejemplo)",
+  "Realizar ejercicios físicos de agilidad (saltar en largo, por ejemplo)",
+  "Esquivar obstáculos en carrera",
+  "Hacer ejercicios físicos de coordinación individual (media luna, por ejemplo)",
+  "Hacer ejercicios físicos de equilibrio (caminar sobre barras, por ejemplo)",
+  "Realizar ejercicios de fuerza (trepar una soga, por ejemplo)",
+  "Comprender tu personalidad (las causas de tus reacciones más características)",
+  "Describir con precisión tus sentimientos (mediante un diario personal, por ejemplo)",
+  "Identificar tus necesidades emocionales (de afecto, por ejemplo)",
+  "Describir tus aspiraciones y metas (cómo te ves en el futuro, por ejemplo)",
+  "Analizar las causas de tus emociones (situaciones que te generan temor, por ejemplo)",
+  "Conocer tus fortalezas y debilidades en diversas situaciones (capacidades, por ejemplo)",
+  "Reconocer tus emociones en el momento que ocurren (ira, por ejemplo)",
+  "Distinguir tus sentimientos relacionados o semejantes (tristeza momentánea y depresión, por ejemplo)",
+  "Reconocer tipos de células y/o tejidos en el microscopio (epidérmicos, por ejemplo)",
+  "Reconocer diferentes tipos de rocas (granitos, por ejemplo)",
+  "Identificar diferencias entre animales de un mismo orden (víboras venenosas e inofensivas, por ejemplo)",
+  "Identificar vegetales de una misma familia (diferentes árboles leñosos, por ejemplo)",
+  "Usar técnicas de evaluación de la contaminación ambiental (del aire o agua, por ejemplo)",
+  "Hacer experimentos para analizar fenómenos naturales (proceso de fotosíntesis, por ejemplo)",
+  "Identificar distintos tipos de suelos (arcillosos, por ejemplo)",
+  "Identificar tipos de cuerpos celestes (diferentes constelaciones con telescopio, por ejemplo)",
+  "Emplear técnicas de evaluación del clima (registro de la velocidad del viento, por ejemplo)"
+];
+
+function rango(a, b){ const r = []; for(let i=a;i<=b;i++) r.push(i); return r; }
+
+const escalas = {
+  LIN:   { nombre: "Lingüística",          items: rango(1,8)   },
+  LOG:   { nombre: "Lógico-Matemática",    items: rango(9,17)  },
+  ESP:   { nombre: "Espacial",             items: rango(18,25) },
+  MUS:   { nombre: "Musical",              items: rango(26,34) },
+  INTER: { nombre: "Interpersonal",        items: rango(35,43) },
+  CIN:   { nombre: "Cinestésico-Corporal", items: rango(44,52) },
+  INTRA: { nombre: "Intrapersonal",        items: rango(53,60) },
+  NAT:   { nombre: "Naturalista",          items: rango(61,69) }
+};
+
+// Baremo IAMI (Pérez, Beltramino y Cupani, 2003): percentil -> puntaje bruto por área.
+// Para los puntos donde la tabla original da un rango (ej. "75-80" en el percentil 99),
+// se toma el límite inferior del rango como valor de referencia para la interpolación.
+const baremoIami = {
+  percentiles: [1,5,10,25,40,50,60,70,75,80,90,95,99],
+  tablas: {
+    LIN:   [10,20,25,30,40,50,55,56,58,60,65,70,75],
+    LOG:   [10,15,20,25,35,45,50,55,60,65,70,75,80],
+    ESP:   [10,20,25,30,40,50,55,56,58,60,65,70,75],
+    MUS:   [10,15,20,25,35,45,50,55,60,65,70,75,80],
+    INTER: [10,20,25,30,40,50,55,56,58,60,65,70,75],
+    CIN:   [10,15,20,25,35,45,50,55,60,65,70,75,80],
+    INTRA: [10,15,20,25,35,45,50,55,60,65,70,75,80],
+    NAT:   [10,15,20,25,35,45,50,55,60,65,70,75,80]
+  }
+};
+
+function percentilIami(codigoEscala, raw){
+  const percentiles = baremoIami.percentiles;
+  const scores = baremoIami.tablas[codigoEscala];
+  const pares = percentiles.map((p, i) => ({ p, score: scores[i] })).sort((a,b) => a.score - b.score);
+  if(raw <= pares[0].score) return pares[0].p;
+  if(raw >= pares[pares.length-1].score) return pares[pares.length-1].p;
+  for(let i=0; i<pares.length-1; i++){
+    if(raw >= pares[i].score && raw <= pares[i+1].score){
+      const rangoScore = pares[i+1].score - pares[i].score;
+      const t = rangoScore === 0 ? 0 : (raw - pares[i].score) / rangoScore;
+      return pares[i].p + t * (pares[i+1].p - pares[i].p);
+    }
+  }
+  return pares[pares.length-1].p;
+}
+
+function bandaDesdePercentil(pc){
+  if(pc >= 75) return 'alto';
+  if(pc < 25) return 'bajo';
+  return 'medio';
+}
+
+const interpretaciones = {
+  LIN: {
+    bajo: "Baja confianza percibida en tareas de comprensión y producción verbal (lectura, redacción, expresión oral). Conviene explorar si responde a dificultades reales o a falta de práctica antes de descartar afinidad con áreas que impliquen lectoescritura.",
+    medio: "Confianza moderada en tareas verbales; puede desenvolverse en actividades de lectura y escritura sin que sea necesariamente un área de fortaleza marcada.",
+    alto: "Alta autoeficacia percibida en comprensión y producción verbal. Suele acompañarse de comodidad en trayectos que impliquen lectura, redacción o comunicación oral."
+  },
+  LOG: {
+    bajo: "Baja confianza percibida en el razonamiento lógico-matemático y la resolución de problemas numéricos. Vale la pena indagar si hay una brecha entre esta percepción y el desempeño académico real en la materia.",
+    medio: "Confianza moderada en tareas matemáticas y de razonamiento lógico; ni una fortaleza marcada ni una dificultad significativa.",
+    alto: "Alta autoeficacia percibida en razonamiento lógico-matemático. Suele asociarse a comodidad con carreras o actividades que impliquen cálculo, estadística o pensamiento analítico."
+  },
+  ESP: {
+    bajo: "Baja confianza percibida en tareas de representación y manejo del espacio (dibujo, planos, diseño). Puede convenir ofrecer experiencias concretas en estas tareas antes de sacar conclusiones vocacionales.",
+    medio: "Confianza moderada en tareas espaciales y de representación gráfica.",
+    alto: "Alta autoeficacia percibida en representación espacial y diseño. Suele vincularse con comodidad en áreas como arquitectura, diseño o disciplinas que requieran visualización tridimensional."
+  },
+  MUS: {
+    bajo: "Baja confianza percibida en ejecución, lectura o composición musical. No necesariamente indica falta de interés, sino de práctica o entrenamiento formal en el área.",
+    medio: "Confianza moderada en tareas musicales.",
+    alto: "Alta autoeficacia percibida en el área musical (ejecución, lectura de partituras, composición)."
+  },
+  INTER: {
+    bajo: "Baja confianza percibida en el trato y la comprensión de otras personas (liderazgo, comunicación, asesoramiento). Puede ser útil trabajar habilidades sociales si esto genera malestar en la vida cotidiana.",
+    medio: "Confianza moderada en habilidades interpersonales.",
+    alto: "Alta autoeficacia percibida en la comprensión y el trato con otras personas. Suele acompañarse de comodidad en roles que impliquen liderazgo, docencia, ventas o trabajo en equipo."
+  },
+  CIN: {
+    bajo: "Baja confianza percibida en el control y uso del propio cuerpo (fuerza, coordinación, resistencia). Conviene distinguir si se relaciona con la condición física actual o con la percepción de la propia habilidad motriz.",
+    medio: "Confianza moderada en el manejo del propio cuerpo y actividades físicas.",
+    alto: "Alta autoeficacia percibida en el control corporal y la actividad física. Suele acompañarse de comodidad con el deporte o actividades que requieran uso hábil del cuerpo."
+  },
+  INTRA: {
+    bajo: "Baja confianza percibida en el autoconocimiento (identificar emociones propias, fortalezas, metas personales). Puede ser un buen punto de partida para trabajar en el proceso de orientación vocacional en sí mismo.",
+    medio: "Confianza moderada en el autoconocimiento y la reflexión sobre uno/a mismo/a.",
+    alto: "Alta autoeficacia percibida en el autoconocimiento: identificar y comprender las propias emociones, fortalezas y metas."
+  },
+  NAT: {
+    bajo: "Baja confianza percibida en la observación y clasificación de fenómenos naturales (biología, geología, ciencias ambientales).",
+    medio: "Confianza moderada en tareas de observación y análisis del mundo natural.",
+    alto: "Alta autoeficacia percibida en la observación, clasificación y análisis de fenómenos naturales. Suele vincularse con comodidad en carreras vinculadas a ciencias biológicas, ambientales o agropecuarias."
+  }
+};
+
+const contenedor = document.getElementById('itemsContainer');
+const respuestas = {};
+
+for(let numItem = 1; numItem <= 69; numItem++){
+  const fila = document.createElement('div');
+  fila.className = 'item';
+  fila.id = 'item-' + numItem;
+
+  const num = document.createElement('div');
+  num.className = 'item-num';
+  num.textContent = numItem;
+
+  const texto = document.createElement('div');
+  texto.className = 'item-texto';
+  texto.textContent = items[numItem - 1];
+
+  const opciones = document.createElement('div');
+  opciones.className = 'item-opciones';
+  for(let valor = 0; valor <= 10; valor++){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = valor;
+    btn.onclick = () => marcarRespuesta(numItem, valor, btn, opciones);
+    opciones.appendChild(btn);
+  }
+
+  fila.appendChild(num);
+  fila.appendChild(texto);
+  fila.appendChild(opciones);
+  contenedor.appendChild(fila);
+}
+
+function marcarRespuesta(numItem, valor, btnClickeado, contenedorOpciones){
+  respuestas[numItem] = valor;
+  [...contenedorOpciones.children].forEach(b => b.classList.remove('activo'));
+  btnClickeado.classList.add('activo');
+  actualizarProgreso();
+}
+
+function actualizarProgreso(){
+  const cargados = Object.keys(respuestas).length;
+  document.getElementById('barraProgreso').textContent = cargados + ' / 69 ítems cargados';
+}
+
+function reiniciar(){
+  if(!confirm('¿Reiniciar el formulario? Se perderán los datos cargados.')) return;
+  Object.keys(respuestas).forEach(k => delete respuestas[k]);
+  document.querySelectorAll('.item-opciones button.activo').forEach(b => b.classList.remove('activo'));
+  document.getElementById('resultados').style.display = 'none';
+  document.getElementById('btnImprimir').style.display = 'none';
+  document.getElementById('alerta-incompleto').style.display = 'none';
+  actualizarProgreso();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// Decodifica el código generado por la versión para pacientes (iami_paciente.html)
+function importarCodigo(){
+  const msg = document.getElementById('importarMsg');
+  const raw = document.getElementById('codigoImportar').value.trim();
+  if(!raw){
+    msg.style.display = 'block';
+    msg.style.color = 'var(--rojo)';
+    msg.textContent = 'Pegá primero el código que te mandó el/la paciente.';
+    return;
+  }
+  try{
+    const sinPrefijo = raw.replace(/^IAMI-/, '').trim();
+    const payload = JSON.parse(decodeURIComponent(escape(atob(sinPrefijo))));
+    if(!payload.valores || payload.valores.length !== 69){
+      throw new Error('El código no tiene las 69 respuestas esperadas.');
+    }
+    for(let i=1; i<=69; i++){
+      const valor = payload.valores[i-1];
+      const contenedorOpciones = document.querySelector('#item-' + i + ' .item-opciones');
+      const btn = [...contenedorOpciones.children].find(b => Number(b.textContent) === Number(valor));
+      if(btn) marcarRespuesta(i, Number(valor), btn, contenedorOpciones);
+    }
+    if(payload.nombre) document.getElementById('nombrePaciente').value = payload.nombre;
+    msg.style.display = 'block';
+    msg.style.color = 'var(--verde)';
+    msg.textContent = 'Respuestas importadas correctamente' + (payload.nombre ? ' (' + payload.nombre + ')' : '') + '. Ya podés tocar "Corregir".';
+  }catch(e){
+    msg.style.display = 'block';
+    msg.style.color = 'var(--rojo)';
+    msg.textContent = 'El código no es válido o está incompleto. Verificá que lo hayas copiado entero.';
+  }
+}
+
+let chartInstance = null;
+
+function corregir(){
+  const faltantes = [];
+  for(let i=1;i<=69;i++){
+    if(!(i in respuestas)) faltantes.push(i);
+  }
+  if(faltantes.length > 0){
+    document.getElementById('alerta-incompleto').style.display = 'block';
+    document.getElementById('alerta-incompleto').textContent =
+      'Faltan ' + faltantes.length + ' ítem(s) por completar: ' + faltantes.join(', ');
+    document.getElementById('alerta-incompleto').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('alerta-incompleto').style.display = 'none';
+
+  const resultadosEscalas = {};
+  Object.entries(escalas).forEach(([codigo, datos]) => {
+    const suma = datos.items.reduce((acc, n) => acc + respuestas[n], 0);
+    const maximo = datos.items.length * 10;
+    const pc = Math.round(percentilIami(codigo, suma) * 10) / 10;
+    const banda = bandaDesdePercentil(pc);
+    resultadosEscalas[codigo] = { nombre: datos.nombre, suma, maximo, pc, banda };
+  });
+
+  mostrarResultados(resultadosEscalas);
+}
+
+function mostrarResultados(resultados){
+  const div = document.getElementById('resultados');
+  div.style.display = 'block';
+
+  const tbody = document.getElementById('tablaResultados');
+  tbody.innerHTML = '';
+  Object.entries(resultados).forEach(([codigo, r]) => {
+    const tr = document.createElement('tr');
+    const bandaLabel = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[r.banda];
+    tr.innerHTML = `
+      <td><b>${r.nombre}</b></td>
+      <td>${r.suma} / ${r.maximo}</td>
+      <td>Pc ${r.pc}</td>
+      <td><span class="banda banda-${r.banda}">${bandaLabel}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Ranking de áreas por percentil, de mayor a menor (útil para orientación vocacional)
+  const ranking = Object.values(resultados).slice().sort((a,b) => b.pc - a.pc);
+  const top3 = ranking.slice(0,3).map(r => r.nombre);
+  const bottom3 = ranking.slice(-3).map(r => r.nombre).reverse();
+
+  const nombrePaciente = document.getElementById('nombrePaciente').value.trim();
+  const fecha = document.getElementById('fechaAdmin').value;
+
+  let resumen = `<b>${nombrePaciente || 'El/la paciente'}</b>`;
+  if(fecha) resumen += ` — administración: ${fecha}`;
+  resumen += '.<br><br>';
+  resumen += `<b>Áreas de mayor autoeficacia percibida:</b> ${top3.join(', ')}.<br>`;
+  resumen += `<b>Áreas de menor autoeficacia percibida:</b> ${bottom3.join(', ')}.<br>`;
+  resumen += '<br>Este ranking ordena las 8 inteligencias de mayor a menor percentil dentro del propio perfil del paciente — es útil para orientar la conversación vocacional, más allá de las bandas absolutas de cada escala.';
+  document.getElementById('resumenGeneral').innerHTML = resumen;
+
+  const analisisDiv = document.getElementById('analisisContainer');
+  analisisDiv.innerHTML = '';
+  Object.entries(resultados).forEach(([codigo, r]) => {
+    const bloque = document.createElement('div');
+    bloque.className = 'analisis-escala ' + r.banda;
+    bloque.innerHTML = `
+      <h4>${r.nombre} (Pc ${r.pc})</h4>
+      <p>${interpretaciones[codigo][r.banda]}</p>
+    `;
+    analisisDiv.appendChild(bloque);
+  });
+
+  const ctx = document.getElementById('graficoIami').getContext('2d');
+  const labels = Object.values(resultados).map(r => r.nombre);
+  const data = Object.values(resultados).map(r => r.pc);
+  const colores = Object.values(resultados).map(r => {
+    if(r.banda === 'bajo') return '#c1553e';
+    if(r.banda === 'medio') return '#d9a441';
+    return '#5a9b7c';
+  });
+
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Percentil',
+        data: data,
+        backgroundColor: colores,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => 'Pc ' + v } },
+        x: { ticks: { autoSkip: false, maxRotation: 40, minRotation: 20 } }
+      }
+    }
+  });
+
+  document.getElementById('btnImprimir').style.display = 'inline-block';
+  div.scrollIntoView({behavior:'smooth'});
+}
+
+actualizarProgreso();
+</script>
+</body>
+</html>
