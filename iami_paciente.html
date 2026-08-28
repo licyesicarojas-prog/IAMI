@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuestionario IAMI</title>
+<style>
+  :root{
+    --azul: #2c5f6f;
+    --azul-claro: #e8f2f4;
+    --verde: #5a9b7c;
+    --texto: #2c2c2c;
+    --gris: #6b6b6b;
+    --borde: #d8dfe1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #f4f6f7;
+    color: var(--texto);
+    margin: 0;
+    padding: 0 0 60px 0;
+  }
+  header{
+    background: linear-gradient(135deg, var(--azul), #3a7d8f);
+    color: white;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1{ margin: 0 0 4px 0; font-size: 1.4rem; }
+  header p{ margin: 0; opacity: 0.9; font-size: 0.9rem; }
+  .container{ max-width: 800px; margin: 20px auto; padding: 0 16px; }
+  .card{
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  label{ display:block; font-size:0.85rem; color: var(--gris); margin-bottom:4px; }
+  input[type=text]{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  .leyenda{
+    background: var(--azul-claro);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .leyenda b{ color: var(--azul); }
+  .escala-ref{
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;
+    background:white; border-radius:6px; padding:8px 10px; margin-top:10px; font-size:0.78rem; color:var(--gris);
+  }
+  .item{
+    border-bottom: 1px solid var(--borde);
+    padding: 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .item:last-child{ border-bottom: none; }
+  .item-num{
+    background: var(--azul);
+    color: white;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .item-texto{ flex: 1 1 340px; font-size: 0.95rem; }
+  .item-opciones{ display:flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; max-width: 100%; }
+  .item-opciones button{
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  .item-opciones button.activo{
+    background: var(--azul);
+    color: white;
+    border-color: var(--azul);
+  }
+  .acciones{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  button.principal{
+    background: var(--verde);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.secundario{
+    background: white;
+    color: var(--azul);
+    border: 1px solid var(--azul);
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  #alerta-incompleto{
+    display:none;
+    background: #fdeeea;
+    color: #c1553e;
+    border: 1px solid #f0c4b8;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+  }
+  #pantallaFinal{ display:none; }
+  .codigo-box{
+    background: #f4f6f7;
+    border: 2px dashed var(--azul);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+    margin: 14px 0;
+    color: var(--texto);
+  }
+  .progreso{
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--borde);
+    font-size: 0.85rem;
+    color: var(--gris);
+    text-align: center;
+  }
+  #copiadoMsg{ color: var(--verde); font-weight:600; font-size:0.9rem; display:none; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cuestionario IAMI</h1>
+  <p>Inventario de Autoeficacia en Inteligencias Múltiples</p>
+</header>
+
+<div class="progreso" id="barraProgreso">0 / 69 completados</div>
+
+<div class="container">
+
+  <div class="card" id="pantallaForm">
+    <div style="margin-bottom:16px;">
+      <label for="nombrePaciente">Tu nombre y apellido</label>
+      <input type="text" id="nombrePaciente" placeholder="Escribí tu nombre completo">
+    </div>
+
+    <div class="leyenda">
+      A continuación vas a encontrar 69 actividades. Para cada una, indicá <b>cuánta confianza tenés en tu
+      habilidad actual para realizarla eficientemente</b> — no importa si te gusta o no, sino qué tan seguro/a
+      estás de poder hacerla bien. Usá una escala de 0 (no puedo hacerla) a 10 (totalmente seguro de poder
+      hacerla), pudiendo usar cualquier número entre medio.
+      <div class="escala-ref">
+        <span><b>10</b> Totalmente seguro</span>
+        <span><b>7-9</b> Bastante seguro</span>
+        <span><b>5-6</b> Relativamente seguro</span>
+        <span><b>1-4</b> Escasamente seguro</span>
+        <span><b>0</b> No puedo hacerlo</span>
+      </div>
+      <br>
+      Respondé con la mayor honestidad posible, sin apuro. No hay respuestas correctas ni incorrectas.
+    </div>
+
+    <div id="itemsContainer"></div>
+
+    <div id="alerta-incompleto">Todavía faltan actividades por completar. Revisá las que quedaron sin marcar.</div>
+
+    <div class="acciones">
+      <button class="principal" onclick="finalizar()">Terminé, generar mi código</button>
+      <button class="secundario" onclick="reiniciar()">Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="card" id="pantallaFinal">
+    <h2 style="color:var(--azul); margin-top:0;">¡Listo, terminaste!</h2>
+    <p>Copiá el siguiente código y enviáselo a tu psicopedagoga por WhatsApp o mail. Con eso ella va a poder cargar
+    tus resultados. No hace falta que lo entiendas ni que lo edites, solo copiarlo y pegarlo tal cual.</p>
+
+    <div class="codigo-box" id="codigoGenerado"></div>
+
+    <div class="acciones">
+      <button class="principal" onclick="copiarCodigo()">Copiar código</button>
+    </div>
+    <p id="copiadoMsg">Código copiado ✓</p>
+  </div>
+
+</div>
+
+<script>
+const items = [
+  "Analizar obras literarias (novelas, por ejemplo)",
+  "Crear composiciones literarias (cuento o poesía, por ejemplo)",
+  "Reconocer géneros y estilos literarios (poesía modernista, por ejemplo)",
+  "Extraer las ideas principales de un texto",
+  "Redactar con corrección gramatical (uso apropiado de los tiempos verbales, por ejemplo)",
+  "Escribir textos periodísticos sobre temas de actualidad (colaborando en una publicación escolar, por ejemplo)",
+  "Redactar monografías (sobre historia contemporánea, por ejemplo)",
+  "Expresarse con un vocabulario amplio y fluido",
+  "Resolver problemas de la Física (velocidad de desplazamiento de la luz o el sonido, por ejemplo)",
+  "Obtener notas altas en Matemática",
+  "Interpretar estadísticas de encuestas o censos (índices de mortalidad o natalidad, por ejemplo)",
+  "Resolver problemas geométricos (superficies, por ejemplo)",
+  "Realizar mentalmente operaciones matemáticas (porcentajes, por ejemplo)",
+  "Resolver ecuaciones de la Química",
+  "Resolver problemas de cálculo (consumo de combustible por kilómetro recorrido, por ejemplo)",
+  "Utilizar calculadoras científicas",
+  "Realizar tareas de contabilidad (cálculo de sueldos complementarios, por ejemplo)",
+  "Dibujar motivos con precisión (una persona, por ejemplo)",
+  "Dibujar objetos en tres dimensiones (figuras geométricas, por ejemplo)",
+  "Emplear la perspectiva en el dibujo (representación de paisajes, por ejemplo)",
+  "Interpretar planos (de una vivienda, por ejemplo)",
+  "Diseñar construcciones (con juegos de armar, por ejemplo)",
+  "Diseñar maquetas (de aviones, por ejemplo)",
+  "Realizar diseño gráfico (tarjetas o afiches, por ejemplo)",
+  "Hacer planos (de maquinaria, por ejemplo)",
+  "Ejecutar un instrumento musical como solista",
+  "Leer partituras musicales",
+  "Componer música",
+  "Cantar en armonía junto a otras personas (coros, por ejemplo)",
+  "Cantar como solista entonadamente (sin desafinar)",
+  "Evaluar la afinación de un instrumento musical",
+  "Ejecutar un instrumento en un grupo musical",
+  "Escuchar una melodía sencilla y transcribirla en una partitura",
+  "Realizar variaciones o arreglos de un tema musical",
+  "Aconsejar a conocidos con problemas personales",
+  "Reconocer rápidamente los deseos e intenciones de otras personas",
+  "Conducir un grupo de personas",
+  "Exponer un tema en público (un debate o una clase, por ejemplo)",
+  "Actuar en representaciones dramáticas (obra teatral, por ejemplo)",
+  "Defender los derechos de otras personas (compañeros de colegio, por ejemplo)",
+  "Entrevistarse con personas de mayor jerarquía (directivos escolares, por ejemplo)",
+  "Promocionar un producto o servicio",
+  "Iniciar y mantener relaciones con desconocidos",
+  "Practicar algún deporte de esfuerzo prolongado (ciclismo o natación, por ejemplo)",
+  "Realizar ejercicios físicos de precisión (encestar en un aro, por ejemplo)",
+  "Realizar carreras de velocidad",
+  "Realizar ejercicios físicos de resistencia (abdominales, por ejemplo)",
+  "Realizar ejercicios físicos de agilidad (saltar en largo, por ejemplo)",
+  "Esquivar obstáculos en carrera",
+  "Hacer ejercicios físicos de coordinación individual (media luna, por ejemplo)",
+  "Hacer ejercicios físicos de equilibrio (caminar sobre barras, por ejemplo)",
+  "Realizar ejercicios de fuerza (trepar una soga, por ejemplo)",
+  "Comprender tu personalidad (las causas de tus reacciones más características)",
+  "Describir con precisión tus sentimientos (mediante un diario personal, por ejemplo)",
+  "Identificar tus necesidades emocionales (de afecto, por ejemplo)",
+  "Describir tus aspiraciones y metas (cómo te ves en el futuro, por ejemplo)",
+  "Analizar las causas de tus emociones (situaciones que te generan temor, por ejemplo)",
+  "Conocer tus fortalezas y debilidades en diversas situaciones (capacidades, por ejemplo)",
+  "Reconocer tus emociones en el momento que ocurren (ira, por ejemplo)",
+  "Distinguir tus sentimientos relacionados o semejantes (tristeza momentánea y depresión, por ejemplo)",
+  "Reconocer tipos de células y/o tejidos en el microscopio (epidérmicos, por ejemplo)",
+  "Reconocer diferentes tipos de rocas (granitos, por ejemplo)",
+  "Identificar diferencias entre animales de un mismo orden (víboras venenosas e inofensivas, por ejemplo)",
+  "Identificar vegetales de una misma familia (diferentes árboles leñosos, por ejemplo)",
+  "Usar técnicas de evaluación de la contaminación ambiental (del aire o agua, por ejemplo)",
+  "Hacer experimentos para analizar fenómenos naturales (proceso de fotosíntesis, por ejemplo)",
+  "Identificar distintos tipos de suelos (arcillosos, por ejemplo)",
+  "Identificar tipos de cuerpos celestes (diferentes constelaciones con telescopio, por ejemplo)",
+  "Emplear técnicas de evaluación del clima (registro de la velocidad del viento, por ejemplo)"
+];
+
+const contenedor = document.getElementById('itemsContainer');
+const respuestas = {};
+
+for(let numItem = 1; numItem <= 69; numItem++){
+  const fila = document.createElement('div');
+  fila.className = 'item';
+
+  const num = document.createElement('div');
+  num.className = 'item-num';
+  num.textContent = numItem;
+
+  const texto = document.createElement('div');
+  texto.className = 'item-texto';
+  texto.textContent = items[numItem - 1];
+
+  const opciones = document.createElement('div');
+  opciones.className = 'item-opciones';
+  for(let valor = 0; valor <= 10; valor++){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = valor;
+    btn.onclick = () => marcarRespuesta(numItem, valor, btn, opciones);
+    opciones.appendChild(btn);
+  }
+
+  fila.appendChild(num);
+  fila.appendChild(texto);
+  fila.appendChild(opciones);
+  contenedor.appendChild(fila);
+}
+
+function marcarRespuesta(numItem, valor, btnClickeado, contenedorOpciones){
+  respuestas[numItem] = valor;
+  [...contenedorOpciones.children].forEach(b => b.classList.remove('activo'));
+  btnClickeado.classList.add('activo');
+  actualizarProgreso();
+}
+
+function actualizarProgreso(){
+  const cargados = Object.keys(respuestas).length;
+  document.getElementById('barraProgreso').textContent = cargados + ' / 69 completados';
+}
+
+function reiniciar(){
+  if(!confirm('¿Reiniciar el cuestionario? Se perderán las respuestas cargadas.')) return;
+  Object.keys(respuestas).forEach(k => delete respuestas[k]);
+  document.querySelectorAll('.item-opciones button.activo').forEach(b => b.classList.remove('activo'));
+  actualizarProgreso();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function finalizar(){
+  const faltantes = [];
+  for(let i=1;i<=69;i++){
+    if(!(i in respuestas)) faltantes.push(i);
+  }
+  if(faltantes.length > 0){
+    const alerta = document.getElementById('alerta-incompleto');
+    alerta.style.display = 'block';
+    alerta.textContent = 'Todavía faltan ' + faltantes.length + ' actividad(es) por completar (número ' + faltantes.join(', ') + ').';
+    alerta.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('alerta-incompleto').style.display = 'none';
+
+  const nombre = document.getElementById('nombrePaciente').value.trim();
+  const valores = [];
+  for(let i=1;i<=69;i++) valores.push(respuestas[i]);
+
+  const payload = JSON.stringify({ v: 1, nombre: nombre, valores: valores });
+  const codigo = 'IAMI-' + btoa(unescape(encodeURIComponent(payload)));
+
+  document.getElementById('codigoGenerado').textContent = codigo;
+  document.getElementById('pantallaForm').style.display = 'none';
+  document.getElementById('pantallaFinal').style.display = 'block';
+  document.getElementById('barraProgreso').style.display = 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function copiarCodigo(){
+  const codigo = document.getElementById('codigoGenerado').textContent;
+  navigator.clipboard.writeText(codigo).then(() => {
+    document.getElementById('copiadoMsg').style.display = 'block';
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(document.getElementById('codigoGenerado'));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    alert('Seleccioná el texto y copialo manualmente (Ctrl+C o mantené presionado y "Copiar").');
+  });
+}
+
+actualizarProgreso();
+</script>
+</body>
+</html>
