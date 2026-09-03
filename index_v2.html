@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corrector LASSI — Lic. Yesica Rojas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --azul: #2c5f6f;
+    --azul-claro: #e8f2f4;
+    --verde: #5a9b7c;
+    --amarillo: #d9a441;
+    --rojo: #c1553e;
+    --texto: #2c2c2c;
+    --gris: #6b6b6b;
+    --borde: #d8dfe1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #f4f6f7;
+    color: var(--texto);
+    margin: 0;
+    padding: 0 0 60px 0;
+  }
+  header{
+    background: linear-gradient(135deg, var(--azul), #3a7d8f);
+    color: white;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1{ margin: 0 0 4px 0; font-size: 1.5rem; }
+  header p{ margin: 0; opacity: 0.9; font-size: 0.9rem; }
+  .container{
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  .card{
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .datos-paciente{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .datos-paciente div{ flex: 1; min-width: 200px; }
+  label{ display:block; font-size:0.85rem; color: var(--gris); margin-bottom:4px; }
+  input[type=text], input[type=date]{
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  .leyenda{
+    background: var(--azul-claro);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .leyenda b{ color: var(--azul); }
+  .item{
+    border-bottom: 1px solid var(--borde);
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .item:last-child{ border-bottom: none; }
+  .item-num{
+    background: var(--azul);
+    color: white;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .item-texto{ flex: 1 1 380px; font-size: 0.92rem; }
+  .item-opciones{
+    display:flex; gap: 6px;
+    flex-shrink: 0;
+  }
+  .item-opciones button{
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all .15s;
+  }
+  .item-opciones button:hover{ background: var(--azul-claro); }
+  .item-opciones button.activo{
+    background: var(--azul);
+    color: white;
+    border-color: var(--azul);
+  }
+  .escala-titulo{
+    margin: 26px 0 6px 0;
+    color: var(--azul);
+    font-size: 1.05rem;
+    border-left: 4px solid var(--azul);
+    padding-left: 10px;
+  }
+  .acciones{
+    display:flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  button.principal{
+    background: var(--verde);
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.principal:hover{ background: #4a8a6b; }
+  button.secundario{
+    background: white;
+    color: var(--azul);
+    border: 1px solid var(--azul);
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  button.secundario:hover{ background: var(--azul-claro); }
+  #alerta-incompleto{
+    display:none;
+    background: #fdeeea;
+    color: var(--rojo);
+    border: 1px solid #f0c4b8;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+  }
+  #resultados{ display:none; }
+  table.resultados{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  table.resultados th, table.resultados td{
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--borde);
+  }
+  table.resultados th{ color: var(--gris); font-weight: 600; font-size: 0.82rem; }
+  .banda{
+    display:inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+  }
+  .banda-bajo{ background: var(--rojo); }
+  .banda-medio{ background: var(--amarillo); }
+  .banda-alto{ background: var(--verde); }
+  .analisis-escala{
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #fafbfb;
+    border-left: 4px solid var(--borde);
+  }
+  .analisis-escala.bajo{ border-left-color: var(--rojo); }
+  .analisis-escala.medio{ border-left-color: var(--amarillo); }
+  .analisis-escala.alto{ border-left-color: var(--verde); }
+  .analisis-escala h4{ margin: 0 0 4px 0; font-size: 0.95rem; color: var(--azul); }
+  .analisis-escala p{ margin: 0; font-size: 0.88rem; line-height: 1.5; }
+  .resumen-general{
+    background: var(--azul-claro);
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .disclaimer{
+    font-size: 0.78rem;
+    color: var(--gris);
+    background: #f4f6f7;
+    border: 1px dashed var(--borde);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 14px;
+  }
+  canvas{ max-width: 100%; }
+  .progreso{
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--borde);
+    font-size: 0.85rem;
+    color: var(--gris);
+    text-align: center;
+  }
+  @media print{
+    header, .acciones, .progreso, #form-lassi { display:none; }
+    body{ background: white; }
+  }
+
+  .ig-badge{
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 1000;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background: white;
+    border: 1px solid var(--borde);
+    padding: 7px 14px 7px 7px;
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+    text-decoration:none;
+    color: var(--texto);
+    font-size:0.78rem;
+    font-weight:700;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .ig-badge:hover{ box-shadow: 0 4px 16px rgba(0,0,0,0.2); transform: translateY(-1px); }
+  .ig-badge-icon{
+    width:26px; height:26px; border-radius:8px;
+    background: linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .ig-badge-icon svg{ width:15px; height:15px; }
+  @media print{ .ig-badge{ display:none; } }
+</style>
+</head>
+<body>
+<a href="https://www.instagram.com/psicope.yesicarojas" target="_blank" rel="noopener noreferrer" class="ig-badge" title="Seguime en Instagram">
+  <span class="ig-badge-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+  </span>
+  <span>@psicope.yesicarojas</span>
+</a>
+
+
+<header>
+  <h1>Corrector automático — LASSI</h1>
+  <p>Inventario de Estrategias de Aprendizaje y Hábitos de Estudio · Lic. Yesica Rojas, Psicopedagoga</p>
+</header>
+
+<div class="progreso" id="barraProgreso">0 / 77 ítems cargados</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="datos-paciente">
+      <div>
+        <label for="nombrePaciente">Paciente</label>
+        <input type="text" id="nombrePaciente" placeholder="Nombre y apellido">
+      </div>
+      <div>
+        <label for="fechaAdmin">Fecha de administración</label>
+        <input type="date" id="fechaAdmin">
+      </div>
+      <div>
+        <label for="baremoSeleccionado">Baremo a aplicar</label>
+        <select id="baremoSeleccionado" style="width:100%; padding:8px 10px; border:1px solid var(--borde); border-radius:6px; font-size:0.95rem;">
+          <option value="general">General (adaptación argentina, todas las edades)</option>
+          <option value="orive">Adolescentes 16-18 años, último año secundaria, colegio privado, NSE medio/medio-alto (Orive, 2018)</option>
+        </select>
+      </div>
+    </div>
+    <div class="disclaimer" style="margin-top:12px;">
+      Elegí el baremo de <b>Orive (2018)</b> solo si el/la paciente encaja en esa población específica
+      (adolescente de 16 a 18 años, último año de secundaria, colegio privado, nivel socioeconómico medio o medio-alto,
+      Zona Norte GBA / CABA). Para cualquier otro caso, usá el baremo <b>General</b>.
+    </div>
+  </div>
+
+  <div class="card" id="form-lassi">
+    <div class="leyenda" style="background:#fdf6e8;">
+      <b>¿El paciente completó el cuestionario en la versión para pacientes y te mandó un código?</b>
+      Pegalo acá y tocá "Importar" para que se autocompleten las 77 respuestas.
+      <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+        <input type="text" id="codigoImportar" placeholder="Pegá acá el código que empieza con LASSI-" style="flex:1; min-width:220px;">
+        <button class="secundario" style="padding:8px 16px;" onclick="importarCodigo()">Importar</button>
+      </div>
+      <p id="importarMsg" style="display:none; margin:8px 0 0 0; font-size:0.85rem;"></p>
+    </div>
+    <div class="leyenda">
+      Marcá el <b>puntaje directo</b> que asignó el/la paciente en cada ítem (tal cual figura en la hoja de respuestas):
+      <br>
+      <b>5</b> = Nunca me pasa &nbsp;·&nbsp;
+      <b>4</b> = Algunas veces &nbsp;·&nbsp;
+      <b>3</b> = A veces sí, a veces no &nbsp;·&nbsp;
+      <b>2</b> = Frecuentemente me pasa &nbsp;·&nbsp;
+      <b>1</b> = Siempre me pasa
+      <br><br>
+      No hace falta que inviertas nada vos: la app se encarga de los ítems que van invertidos según la clave de corrección oficial.
+      Los ítems están en el mismo orden 1 a 77 que la hoja de respuestas original; los resultados se reorganizan por escala automáticamente al corregir.
+    </div>
+    <div id="itemsContainer"></div>
+  </div>
+
+  <div id="alerta-incompleto">Todavía faltan ítems por completar. Revisá los que quedaron sin marcar antes de corregir.</div>
+
+  <div class="acciones">
+    <button class="principal" onclick="corregir()">Corregir y ver resultados</button>
+    <button class="secundario" onclick="reiniciar()">Reiniciar formulario</button>
+    <button class="secundario" onclick="window.print()" id="btnImprimir" style="display:none;">Imprimir / guardar PDF</button>
+  </div>
+
+  <div class="card" id="resultados">
+    <h2 style="color:var(--azul); margin-top:0;">Resultados</h2>
+    <div class="resumen-general" id="resumenGeneral"></div>
+
+    <canvas id="graficoLassi" height="140"></canvas>
+
+    <table class="resultados" style="margin-top:20px;">
+      <thead>
+        <tr><th>Escala</th><th>Puntaje bruto</th><th>Percentil</th><th>Banda</th></tr>
+      </thead>
+      <tbody id="tablaResultados"></tbody>
+    </table>
+    <p style="font-size:0.8rem; color:var(--gris); margin-top:6px;" id="baremoUsadoLabel"></p>
+
+    <h3 style="color:var(--azul); margin-top:26px;">Análisis por área</h3>
+    <div id="analisisContainer"></div>
+
+    <div class="disclaimer">
+      <b>Nota metodológica:</b> los percentiles se calculan según el baremo elegido arriba.
+      <br>• <b>General:</b> adaptación argentina, tabla "Transformación de puntajes brutos LASSI" (percentil provisorio, uso general, sin recorte etario específico).
+      <br>• <b>Orive (2018):</b> Orive, M. A. — <i>Actualización de los baremos del Inventario de Estrategias de Aprendizaje y Hábitos de Estudio (LASSI)</i>. Trabajo de Integración Final, Licenciatura en Psicología, Universidad Austral. Muestra de 146 adolescentes de 16-18 años, último año de secundaria, colegios privados NSE medio/medio-alto, Zona Norte GBA y CABA (2017). Este baremo mostró diferencias significativas respecto del de 1991 en 7 de las 10 escalas, por lo que solo debería aplicarse a población con ese perfil.
+      <br><br>Las bandas Bajo (Pc &lt; 25) / Medio (Pc 25-74) / Alto (Pc ≥ 75) siguen el criterio percentilar estándar. Como con cualquier instrumento psicométrico, el resultado es un insumo para la lectura clínica, no un diagnóstico en sí mismo.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---------- DATOS DEL INSTRUMENTO ----------
+
+const items = [
+  "me preocupa salir aplazado/a en un examen.",
+  "durante una clase, puedo distinguir entre una información importante y otra poco importante.",
+  "me resulta difícil ajustarme a un programa de estudios.",
+  "después de clase releo mis apuntes para comprender mejor la información.",
+  "pienso que casarme es más importante que terminar la carrera.",
+  "durante las clases pienso en otras cosas, no presto atención.",
+  "utilizo los títulos y las letras en bastardilla que figuran en los libros como ayuda en mis estudios.",
+  "trato de identificar los temas principales de la clase que se está dando.",
+  "una mala nota ya me desanima.",
+  "estoy al día con mis estudios.",
+  "problemas ajenos a mis estudios (afectivos, laborales) me impiden estudiar bien.",
+  "al ponerme a estudiar algo, pienso en lo que debería saber sobre el tema.",
+  "aun cuando lo que tenga que estudiar sea aburrido, me las arreglo para seguir trabajando hasta terminar.",
+  "estoy confundido/a, no sé qué quiero conseguir estudiando.",
+  "comprendo mejor ideas o palabras si imagino una situación real en la que se dan.",
+  "voy a las clases sin haber estudiado o leído.",
+  "cuando me preparo para un examen, invento preguntas que imagino que me formularán.",
+  "sería mejor que no estudiara.",
+  "me es útil subrayar cuando releo los textos.",
+  "me va mal en las pruebas porque me es difícil organizar un trabajo en poco tiempo.",
+  "trato de imaginar preguntas de los exámenes al releer el material de las clases.",
+  "solamente estudio cuando tengo un examen.",
+  "trato de decir con mis propias palabras lo que estoy estudiando.",
+  "comparo mis apuntes con los de otros compañeros para asegurarme que están completos.",
+  "cuando estudio me pongo muy tenso/a.",
+  "releo mis apuntes antes de ir a la clase siguiente.",
+  "estoy poco capacitado/a para resumir lo que leo o escucho.",
+  "me esfuerzo en obtener buenas notas aunque no me guste la materia.",
+  "tengo la sensación de tener poco control sobre mis estudios.",
+  "me detengo periódicamente al leer y reviso mentalmente si entendí lo que leí.",
+  "aunque esté muy bien preparado/a, me siento muy ansioso/a al dar un examen.",
+  "cuando estoy estudiando un tema, trato de entenderlo en su totalidad.",
+  "cuando no estudio, trato de buscar excusas.",
+  "me cuesta trabajo imaginar qué tengo que hacer para aprender el material, cuando estoy estudiando.",
+  "cuando comienzo a rendir un examen, confío en que me irá bien.",
+  "cuando empiezo a estudiar, las demoras y las interrupciones me causan problemas.",
+  "trato de verificar si comprendo lo que el profesor dice durante las clases.",
+  "me interesa poco saber cultura general, solo deseo conseguir un buen trabajo.",
+  "me resulta imposible concentrarme cuando estoy de mal humor o me falta descanso.",
+  "trato de relacionar lo que estoy estudiando con lo que ya sé.",
+  "estudiando, trato de alcanzar metas altas.",
+  "en casi todos los exámenes, me falta tiempo para terminarlos.",
+  "me es difícil prestar atención durante las clases.",
+  "cuando leo, señalo de alguna manera las partes que me interesan.",
+  "solo estudio las materias que me gustan.",
+  "me distraigo de mis estudios con mucha facilidad.",
+  "trato de relacionar lo que estudio con mis experiencias personales.",
+  "uso bien las horas que dedico a estudiar.",
+  "cuando la tarea es difícil, la abandono o solo hago las partes fáciles.",
+  "hago croquis o dibujos que me ayudan a entender lo que estudio.",
+  "me desagradan la mayoría de las actividades que se hacen en clase.",
+  "tengo dificultades para comprender las preguntas de los exámenes.",
+  "hago esquemas o gráficos para resumir los contenidos de una materia.",
+  "la preocupación porque me pueda ir mal, dificulta mi concentración al dar un examen.",
+  "me cuesta entender ciertos temas porque no presto atención.",
+  "leo los textos que me dan en las clases.",
+  "siento pánico cuando tengo que dar un examen importante.",
+  "cuando decido estudiar, dispongo de un tiempo determinado y me ajusto a él.",
+  "al dar un examen, me doy cuenta de que estudié un tema equivocado.",
+  "me resulta difícil decidir qué es lo importante a subrayar en un texto.",
+  "cuando me pongo a estudiar, me concentro totalmente.",
+  "uso los títulos de los capítulos como guías para identificar puntos importantes de lo que estoy leyendo.",
+  "me pongo tan nerviosa/o al dar un examen que al contestar las preguntas no lo hago con todas mis capacidades.",
+  "memorizo reglas, términos técnicos y fórmulas sin entenderlos.",
+  "me tomo examen a mí mismo/a para estar seguro/a que conozco el material que estudié.",
+  "dejo de lado el estudio más de lo debido.",
+  "trato de ver de qué manera podría aplicar lo que estoy estudiando en mi vida cotidiana.",
+  "mi mente divaga mucho cuando trato de estudiar.",
+  "creo que no vale la pena estudiar lo que se enseña en la mayoría de las clases.",
+  "mientras reviso los materiales de una clase, voy haciendo las tareas asignadas.",
+  "tengo dificultades para adecuar mi forma de estudiar a las distintas materias.",
+  "cuando estudio, me pierdo en detalles y no encuentro las ideas centrales.",
+  "cuando es posible, me encuentro con compañeros para repasar en grupo.",
+  "paso demasiado tiempo con mis amigos y ello afecta mis estudios.",
+  "en los exámenes escritos descubro que no entendí lo que me preguntaban y debido a ello saco notas bajas.",
+  "trato de buscar relaciones entre los distintos temas que estoy estudiando.",
+  "tengo dificultades para identificar los puntos importantes en lo que leo."
+]; // index 0 = item 1
+
+const itemsInvertidos = new Set([2,4,7,8,10,12,13,15,17,19,21,23,24,26,28,30,32,35,37,40,41,44,47,48,50,53,56,58,61,62,65,70,73,76]);
+
+const escalas = {
+  ATT: { nombre: "Actitud e intereses", items: [5,14,18,29,38,45,51,69] },
+  MOT: { nombre: "Motivación, autodisciplina y disponibilidad", items: [10,13,16,28,33,41,49,56] },
+  TMT: { nombre: "Administración del tiempo", items: [3,22,36,42,48,58,66,74] },
+  ANX: { nombre: "Ansiedad y preocupación por el rendimiento", items: [1,9,25,31,35,54,57,63] },
+  CON: { nombre: "Concentración y atención", items: [6,11,39,43,46,55,61,68] },
+  INP: { nombre: "Procesamiento de información", items: [12,15,23,32,40,47,67,76] },
+  SMI: { nombre: "Selección de ideas principales", items: [2,8,60,72,77] },
+  STA: { nombre: "Técnicas de ayuda al estudio", items: [7,19,24,44,50,53,62,73] },
+  SFT: { nombre: "Autoevaluación y repaso", items: [4,17,21,26,30,37,65,70] },
+  EST: { nombre: "Preparación para los exámenes", items: [20,27,34,52,59,64,71,75] }
+};
+
+// ---------- BAREMOS ----------
+
+// Baremo General: tabla directa puntaje bruto (5 a 40) -> percentil, por escala.
+// Fuente: "Transformación de los puntajes Brutos LASSI" (adaptación argentina, tabla provisoria).
+// SMI (5 ítems) solo alcanza hasta puntaje 25; de ahí en más queda en el techo (100).
+const baremoGeneral = {
+  minRaw: 5,
+  tablas: {
+    ATT: [0.0,0.0,0.0,0.0,0.0,0.1,0.2,0.3,0.3,0.3,0.5,0.6,0.6,0.6,1.3,2.2,2.5,4.1,5.6,7.8,10.1,12.7,15.8,21.9,27.9,34.4,41.4,51.1,60.4,71.2,78.7,86.8,91.4,95.6,98.4,100.0],
+    MOT: [0.0,0.0,0.0,0.0,0.0,0.1,0.2,0.3,0.3,0.3,0.8,0.9,1.2,2.1,2.9,4.5,6.0,7.9,9.6,12.1,15.0,19.0,23.1,30.3,37.9,45.0,52.1,59.3,66.0,72.0,79.0,86.1,90.4,95.0,97.4,100.0],
+    TMT: [0.0,0.0,0.0,0.5,1.3,2.0,3.4,6.2,8.3,10.7,14.4,18.3,22.5,26.6,31.8,36.7,41.7,47.9,51.8,57.3,62.0,66.9,71.6,76.4,80.5,84.3,88.3,90.3,92.1,94.5,96.6,98.1,99.2,99.4,99.9,100.0],
+    ANX: [0.0,0.0,0.0,0.0,0.3,0.7,0.8,1.0,2.2,3.3,5.6,8.0,10.8,13.2,15.4,19.2,23.7,27.8,32.6,38.2,43.9,49.9,54.7,61.3,67.0,72.8,78.2,82.7,87.3,91.3,93.7,96.3,97.9,98.6,99.5,100.0],
+    CON: [0.0,0.0,0.0,0.3,0.6,1.0,2.0,3.2,4.8,6.2,7.9,9.7,12.1,15.1,19.3,23.0,27.7,32.7,39.4,44.9,50.6,55.2,62.3,67.8,74.2,80.7,86.9,92.1,94.4,96.3,98.2,99.3,99.8,99.9,100.0,100.0],
+    INP: [0.0,0.0,0.0,0.0,0.1,0.1,0.1,0.3,0.5,1.2,2.3,3.7,5.6,7.2,10.3,13.7,18.3,22.7,30.1,36.2,41.1,46.1,53.1,61.1,68.0,74.4,79.3,84.8,88.3,90.8,93.6,95.8,96.5,98.5,99.3,100.0],
+    SMI: [0.0,0.2,0.2,1.0,1.9,3.2,4.9,8.3,11.7,16.7,22.5,29.5,41.6,52.5,65.2,77.7,87.6,91.8,94.4,97.8,100.0], // raw 5 a 25 solamente
+    STA: [0.0,0.0,0.0,0.1,0.2,0.3,0.3,1.2,1.3,2.8,3.9,5.5,8.2,11.8,16.9,21.9,27.1,32.9,39.6,46.5,54.9,63.0,68.9,75.8,80.6,85.2,90.0,92.9,95.6,97.1,97.8,98.5,99.2,99.8,100.0,100.0],
+    SFT: [0.0,0.0,0.0,0.0,0.0,0.1,0.2,0.3,1.2,1.7,2.4,4.5,6.6,9.0,13.0,17.6,22.2,28.3,34.5,42.3,50.5,57.8,65.8,72.8,78.7,84.0,88.1,92.1,94.8,96.4,97.9,98.5,99.0,99.8,99.9,100.0],
+    EST: [0.0,0.0,0.0,0.0,0.2,0.2,0.2,0.6,0.7,1.0,1.6,2.1,2.9,3.9,4.9,6.6,8.9,11.0,13.6,17.7,21.3,26.2,31.5,37.2,44.6,51.5,61.8,72.0,80.1,85.0,89.1,92.0,94.5,97.1,98.6,100.0]
+  }
+};
+
+// Baremo Orive (2018) - Universidad Austral: percentiles 1..99 con el puntaje bruto correspondiente,
+// para adolescentes de 16-18 años, último año de secundaria, colegio privado, NSE medio/medio-alto (n=146).
+// Para pasar de puntaje bruto a percentil hay que interpolar sobre estos pares.
+const baremoOrive = {
+  percentiles: [1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99],
+  tablas: {
+    ATT: [17.35,23.00,24.00,26.00,27.00,28.00,28.00,29.45,30.00,31.00,31.00,32.00,32.00,33.00,33.00,34.00,34.00,34.00,35.00,36.00,37.00],
+    MOT: [12.47,18.35,20.00,21.00,22.00,23.00,24.00,25.00,26.00,27.00,27.00,28.85,30.00,30.00,30.00,31.00,32.00,33.00,34.00,35.65,39.06],
+    TMT: [12.94,16.00,18.00,20.00,20.00,21.75,22.10,23.45,24.00,25.00,26.00,26.00,27.00,28.00,28.00,29.00,29.00,30.00,31.00,33.00,37.53],
+    ANX: [12.94,17.35,20.00,21.00,22.00,22.75,23.00,24.00,25.00,25.15,26.00,27.00,27.00,28.00,28.90,30.00,31.00,32.00,32.30,35.00,37.00],
+    CON: [9.94,14.35,17.00,19.00,20.00,22.00,22.00,23.00,24.00,24.00,26.00,26.00,26.20,27.00,28.00,29.00,30.00,31.00,32.00,34.00,39.06],
+    INP: [13.35,19.00,20.00,22.00,22.40,23.75,24.10,25.00,26.00,26.15,27.00,28.85,29.00,30.00,30.90,31.00,31.60,33.00,33.00,34.00,37.06],
+    SMI: [8.35,13.00,14.00,15.00,16.40,18.00,18.00,18.00,19.00,19.00,20.00,20.00,20.00,21.00,21.00,22.00,23.00,23.00,24.00,24.00,25.00],
+    STA: [11.47,16.35,19.70,21.00,22.00,23.00,24.00,25.00,25.00,26.00,26.00,27.00,27.00,28.00,29.00,30.00,30.00,32.00,33.00,34.00,36.00],
+    SFT: [9.47,14.00,15.00,16.05,17.00,18.00,18.10,20.00,20.00,21.00,22.00,23.00,24.00,24.55,25.00,25.25,26.00,27.00,29.00,30.65,33.53],
+    EST: [20.41,24.35,27.00,28.00,29.00,30.00,31.00,31.00,32.00,33.00,33.00,33.00,34.00,34.00,35.00,35.00,36.00,37.00,37.00,38.00,40.00]
+  }
+};
+
+// Convierte puntaje bruto -> percentil usando el baremo General (lookup directo por índice de tabla).
+function percentilGeneral(codigoEscala, raw){
+  const tabla = baremoGeneral.tablas[codigoEscala];
+  const idx = raw - baremoGeneral.minRaw;
+  if(idx < 0) return 0.0;
+  if(idx >= tabla.length) return 100.0;
+  return tabla[idx];
+}
+
+// Convierte puntaje bruto -> percentil usando el baremo Orive, interpolando entre los puntos (percentil, puntaje) dados.
+function percentilOrive(codigoEscala, raw){
+  const percentiles = baremoOrive.percentiles;
+  const scores = baremoOrive.tablas[codigoEscala];
+  const pares = percentiles.map((p, i) => ({ p, score: scores[i] })).sort((a,b) => a.score - b.score);
+  if(raw <= pares[0].score) return pares[0].p;
+  if(raw >= pares[pares.length-1].score) return pares[pares.length-1].p;
+  for(let i=0; i<pares.length-1; i++){
+    if(raw >= pares[i].score && raw <= pares[i+1].score){
+      const rango = pares[i+1].score - pares[i].score;
+      const t = rango === 0 ? 0 : (raw - pares[i].score) / rango;
+      return pares[i].p + t * (pares[i+1].p - pares[i].p);
+    }
+  }
+  return pares[pares.length-1].p;
+}
+
+function obtenerPercentil(codigoEscala, raw){
+  const baremo = document.getElementById('baremoSeleccionado').value;
+  const pc = baremo === 'orive' ? percentilOrive(codigoEscala, raw) : percentilGeneral(codigoEscala, raw);
+  return Math.round(pc * 10) / 10;
+}
+
+function bandaDesdePercentil(pc){
+  if(pc >= 75) return 'alto';
+  if(pc < 25) return 'bajo';
+  return 'medio';
+}
+
+const interpretaciones = {
+  ATT: {
+    bajo: "Se observa bajo interés y disposición hacia la actividad académica. Convendría trabajar el sentido personal del estudio, la claridad de metas y qué representa la carrera o la etapa educativa para el/la estudiante.",
+    medio: "El interés y la disposición hacia el estudio son moderados; hay margen para fortalecer el sentido de las metas académicas.",
+    alto: "Buena disposición e interés hacia la actividad académica; el/la estudiante reconoce el valor de lo que estudia."
+  },
+  MOT: {
+    bajo: "Bajo nivel de responsabilidad y autodisciplina frente a las tareas. Se sugiere trabajar hábitos de constancia, cumplimiento de plazos y tolerancia a tareas poco atractivas.",
+    medio: "Nivel moderado de disciplina y compromiso con las tareas; conviene reforzar la constancia frente a materias poco motivantes.",
+    alto: "Buen nivel de responsabilidad, autodisciplina y compromiso con las tareas académicas."
+  },
+  TMT: {
+    bajo: "Dificultad marcada para organizar el tiempo de estudio y sostener una agenda. Se recomienda entrenar planificación, uso de agenda y manejo de distracciones.",
+    medio: "Manejo del tiempo aceptable, con margen de mejora en la organización y en sostener el plan de estudio ante interrupciones.",
+    alto: "Buen manejo del tiempo de estudio y capacidad de sostener una agenda de trabajo."
+  },
+  ANX: {
+    bajo: "El puntaje bajo en esta escala indica niveles elevados de ansiedad y preocupación frente a exámenes y evaluaciones. Se sugiere trabajar técnicas de regulación emocional y afrontamiento de la ansiedad ante instancias evaluativas.",
+    medio: "Ansiedad moderada frente a las situaciones de evaluación; puede beneficiarse de estrategias de manejo de la ansiedad como apoyo preventivo.",
+    alto: "Buen manejo emocional frente a exámenes y situaciones evaluativas, con bajo nivel de ansiedad asociada."
+  },
+  CON: {
+    bajo: "Alto nivel de distraibilidad durante las tareas académicas. Se recomienda diseñar estrategias específicas para desarrollar la concentración y priorizar tareas.",
+    medio: "Nivel moderado de concentración; se distrae en ciertas condiciones (cansancio, ánimo) y podría beneficiarse de pautas de atención sostenida.",
+    alto: "Buena capacidad de concentración y atención sostenida durante las tareas académicas."
+  },
+  INP: {
+    bajo: "Falta de estrategias de elaboración, organización y razonamiento sobre la información. Conviene trabajar en ayudas para recordar y relacionar contenidos (analogías, hipótesis, relaciones con lo ya sabido).",
+    medio: "Procesamiento de la información moderado; puede beneficiarse de más estrategias de elaboración y relación entre contenidos nuevos y previos.",
+    alto: "Buena capacidad para elaborar, organizar y razonar sobre la información nueva."
+  },
+  SMI: {
+    bajo: "Dificultad para identificar y expresar las ideas principales, con tendencia a quedarse en detalles superfluos. Se sugiere entrenar resumen, identificación de palabras clave y jerarquización de información.",
+    medio: "Capacidad moderada para distinguir ideas centrales de secundarias; puede reforzarse con práctica de resumen y subrayado selectivo.",
+    alto: "Buena capacidad para seleccionar y expresar las ideas principales, descartando información irrelevante."
+  },
+  STA: {
+    bajo: "Bajo uso de recursos de apoyo al estudio (esquemas, mapas, subrayado, resúmenes). Se recomienda enseñar y modelar el uso de estas ayudas para fortalecer la memoria y el aprendizaje significativo.",
+    medio: "Uso moderado de técnicas de apoyo al estudio; puede ampliar su repertorio de recursos (mapas, esquemas, resúmenes propios).",
+    alto: "Buen uso de técnicas y materiales de apoyo (esquemas, mapas, subrayado) para el aprendizaje."
+  },
+  SFT: {
+    bajo: "Escaso hábito de autoevaluación y repaso de lo aprendido. Se sugiere entrenar técnicas de autoexamen para monitorear la propia comprensión.",
+    medio: "Autoevaluación moderada; el hábito de repasar y chequear la propia comprensión puede fortalecerse.",
+    alto: "Buen hábito de autoevaluación: revisa y valora su propia comprensión y adquisición de conocimientos."
+  },
+  EST: {
+    bajo: "Dificultades para prepararse y rendir exámenes de forma organizada. Conviene trabajar en organización de la información, resúmenes, toma de notas y secuenciación del estudio antes de una evaluación.",
+    medio: "Preparación para exámenes moderadamente organizada; puede beneficiarse de mayor planificación previa a la evaluación.",
+    alto: "Buen manejo de estrategias de preparación y rendimiento en instancias de examen."
+  }
+};
+
+// ---------- CONSTRUCCIÓN DEL FORMULARIO ----------
+
+const contenedor = document.getElementById('itemsContainer');
+const respuestas = {}; // { numItem: valor(1-5) }
+
+// Presentamos los ítems en orden secuencial (1 a 77), tal como están en la hoja de respuestas
+// original, para que sea más rápido transcribir. La reorganización por escala se hace
+// después, al mostrar los resultados.
+for(let numItem = 1; numItem <= 77; numItem++){
+  const fila = document.createElement('div');
+  fila.className = 'item';
+  fila.id = 'item-' + numItem;
+
+  const num = document.createElement('div');
+  num.className = 'item-num';
+  num.textContent = numItem;
+
+  const texto = document.createElement('div');
+  texto.className = 'item-texto';
+  texto.textContent = items[numItem - 1];
+
+  const opciones = document.createElement('div');
+  opciones.className = 'item-opciones';
+  [1,2,3,4,5].forEach(valor => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = valor;
+    btn.onclick = () => marcarRespuesta(numItem, valor, btn, opciones);
+    opciones.appendChild(btn);
+  });
+
+  fila.appendChild(num);
+  fila.appendChild(texto);
+  fila.appendChild(opciones);
+  contenedor.appendChild(fila);
+}
+
+function marcarRespuesta(numItem, valor, btnClickeado, contenedorOpciones){
+  respuestas[numItem] = valor;
+  [...contenedorOpciones.children].forEach(b => b.classList.remove('activo'));
+  btnClickeado.classList.add('activo');
+  actualizarProgreso();
+}
+
+// Decodifica el código generado por la versión para pacientes (lassi_paciente.html)
+// y completa automáticamente las 77 respuestas + el nombre.
+function importarCodigo(){
+  const msg = document.getElementById('importarMsg');
+  const raw = document.getElementById('codigoImportar').value.trim();
+  if(!raw){
+    msg.style.display = 'block';
+    msg.style.color = 'var(--rojo)';
+    msg.textContent = 'Pegá primero el código que te mandó el/la paciente.';
+    return;
+  }
+  try{
+    const sinPrefijo = raw.replace(/^LASSI-/, '').trim();
+    const payload = JSON.parse(decodeURIComponent(escape(atob(sinPrefijo))));
+    if(!payload.valores || payload.valores.length !== 77){
+      throw new Error('El código no tiene las 77 respuestas esperadas.');
+    }
+    for(let i=1; i<=77; i++){
+      const valor = payload.valores[i-1];
+      const contenedorOpciones = document.querySelector('#item-' + i + ' .item-opciones');
+      const btn = [...contenedorOpciones.children].find(b => Number(b.textContent) === Number(valor));
+      if(btn) marcarRespuesta(i, Number(valor), btn, contenedorOpciones);
+    }
+    if(payload.nombre) document.getElementById('nombrePaciente').value = payload.nombre;
+    msg.style.display = 'block';
+    msg.style.color = 'var(--verde)';
+    msg.textContent = 'Respuestas importadas correctamente' + (payload.nombre ? ' (' + payload.nombre + ')' : '') + '. Ya podés tocar "Corregir".';
+  }catch(e){
+    msg.style.display = 'block';
+    msg.style.color = 'var(--rojo)';
+    msg.textContent = 'El código no es válido o está incompleto. Verificá que lo hayas copiado entero.';
+  }
+}
+
+function actualizarProgreso(){
+  const cargados = Object.keys(respuestas).length;
+  document.getElementById('barraProgreso').textContent = cargados + ' / 77 ítems cargados';
+}
+
+function reiniciar(){
+  if(!confirm('¿Reiniciar el formulario? Se perderán los datos cargados.')) return;
+  Object.keys(respuestas).forEach(k => delete respuestas[k]);
+  document.querySelectorAll('.item-opciones button.activo').forEach(b => b.classList.remove('activo'));
+  document.getElementById('resultados').style.display = 'none';
+  document.getElementById('btnImprimir').style.display = 'none';
+  document.getElementById('alerta-incompleto').style.display = 'none';
+  actualizarProgreso();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ---------- CORRECCIÓN ----------
+
+let chartInstance = null;
+
+function corregir(){
+  const faltantes = [];
+  for(let i=1;i<=77;i++){
+    if(!(i in respuestas)) faltantes.push(i);
+  }
+  if(faltantes.length > 0){
+    document.getElementById('alerta-incompleto').style.display = 'block';
+    document.getElementById('alerta-incompleto').textContent =
+      'Faltan ' + faltantes.length + ' ítem(s) por completar: ' + faltantes.join(', ');
+    document.getElementById('alerta-incompleto').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('alerta-incompleto').style.display = 'none';
+
+  // Invertir valores donde corresponde
+  const valoresCorregidos = {};
+  for(let i=1;i<=77;i++){
+    let v = respuestas[i];
+    if(itemsInvertidos.has(i)){
+      const inversion = {1:5, 2:4, 3:3, 4:2, 5:1};
+      v = inversion[v];
+    }
+    valoresCorregidos[i] = v;
+  }
+
+  // Sumar por escala y convertir a percentil según el baremo elegido
+  const resultadosEscalas = {};
+  Object.entries(escalas).forEach(([codigo, datos]) => {
+    const suma = datos.items.reduce((acc, n) => acc + valoresCorregidos[n], 0);
+    const maximo = datos.items.length * 5;
+    const pc = obtenerPercentil(codigo, suma);
+    const banda = bandaDesdePercentil(pc);
+    resultadosEscalas[codigo] = { nombre: datos.nombre, suma, maximo, pc, banda };
+  });
+
+  mostrarResultados(resultadosEscalas);
+}
+
+function mostrarResultados(resultados){
+  const div = document.getElementById('resultados');
+  div.style.display = 'block';
+
+  // Tabla
+  const tbody = document.getElementById('tablaResultados');
+  tbody.innerHTML = '';
+  Object.entries(resultados).forEach(([codigo, r]) => {
+    const tr = document.createElement('tr');
+    const bandaLabel = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[r.banda];
+    tr.innerHTML = `
+      <td><b>${codigo}</b> — ${r.nombre}</td>
+      <td>${r.suma} / ${r.maximo}</td>
+      <td>Pc ${r.pc}</td>
+      <td><span class="banda banda-${r.banda}">${bandaLabel}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const baremoElegido = document.getElementById('baremoSeleccionado').value;
+  document.getElementById('baremoUsadoLabel').textContent = baremoElegido === 'orive'
+    ? 'Baremo aplicado: adolescentes 16-18 años, último año secundaria, colegio privado, NSE medio/medio-alto (Orive, 2018 — Universidad Austral).'
+    : 'Baremo aplicado: General, adaptación argentina (Transformación de puntajes brutos LASSI).';
+
+  // Resumen general
+  const bajos = Object.entries(resultados).filter(([c,r]) => r.banda === 'bajo').map(([c]) => c);
+  const altos = Object.entries(resultados).filter(([c,r]) => r.banda === 'alto').map(([c]) => c);
+  const nombrePaciente = document.getElementById('nombrePaciente').value.trim();
+  const fecha = document.getElementById('fechaAdmin').value;
+
+  let resumen = `<b>${nombrePaciente || 'El/la paciente'}</b>`;
+  if(fecha) resumen += ` — administración: ${fecha}`;
+  resumen += '.<br><br>';
+  if(altos.length){
+    resumen += `<b>Fortalezas relativas (banda alta):</b> ${altos.join(', ')}.<br>`;
+  }
+  if(bajos.length){
+    resumen += `<b>Áreas prioritarias a trabajar (banda baja):</b> ${bajos.join(', ')}.<br>`;
+  }
+  if(!altos.length && !bajos.length){
+    resumen += 'El perfil se mantiene en banda media en todas las escalas, sin fortalezas ni debilidades marcadamente diferenciadas.';
+  }
+  document.getElementById('resumenGeneral').innerHTML = resumen;
+
+  // Análisis por área
+  const analisisDiv = document.getElementById('analisisContainer');
+  analisisDiv.innerHTML = '';
+  Object.entries(resultados).forEach(([codigo, r]) => {
+    const bloque = document.createElement('div');
+    bloque.className = 'analisis-escala ' + r.banda;
+    bloque.innerHTML = `
+      <h4>${codigo} — ${r.nombre} (Pc ${r.pc})</h4>
+      <p>${interpretaciones[codigo][r.banda]}</p>
+    `;
+    analisisDiv.appendChild(bloque);
+  });
+
+  // Gráfico
+  const ctx = document.getElementById('graficoLassi').getContext('2d');
+  const labels = Object.keys(resultados);
+  const data = Object.values(resultados).map(r => r.pc);
+  const colores = Object.values(resultados).map(r => {
+    if(r.banda === 'bajo') return '#c1553e';
+    if(r.banda === 'medio') return '#d9a441';
+    return '#5a9b7c';
+  });
+
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Percentil',
+        data: data,
+        backgroundColor: colores,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => 'Pc ' + v } }
+      }
+    }
+  });
+
+  document.getElementById('btnImprimir').style.display = 'inline-block';
+  div.scrollIntoView({behavior:'smooth'});
+}
+
+actualizarProgreso();
+</script>
+</body>
+</html>
