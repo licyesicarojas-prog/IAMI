@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuestionario LASSI</title>
+<style>
+  :root{
+    --azul: #2c5f6f;
+    --azul-claro: #e8f2f4;
+    --verde: #5a9b7c;
+    --texto: #2c2c2c;
+    --gris: #6b6b6b;
+    --borde: #d8dfe1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #f4f6f7;
+    color: var(--texto);
+    margin: 0;
+    padding: 0 0 60px 0;
+  }
+  header{
+    background: linear-gradient(135deg, var(--azul), #3a7d8f);
+    color: white;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1{ margin: 0 0 4px 0; font-size: 1.4rem; }
+  header p{ margin: 0; opacity: 0.9; font-size: 0.9rem; }
+  .container{ max-width: 800px; margin: 20px auto; padding: 0 16px; }
+  .card{
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  label{ display:block; font-size:0.85rem; color: var(--gris); margin-bottom:4px; }
+  input[type=text]{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  .leyenda{
+    background: var(--azul-claro);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .leyenda b{ color: var(--azul); }
+  .item{
+    border-bottom: 1px solid var(--borde);
+    padding: 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .item:last-child{ border-bottom: none; }
+  .item-num{
+    background: var(--azul);
+    color: white;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .item-texto{ flex: 1 1 380px; font-size: 0.98rem; }
+  .item-opciones{ display:flex; gap: 6px; flex-shrink: 0; }
+  .item-opciones button{
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .item-opciones button.activo{
+    background: var(--azul);
+    color: white;
+    border-color: var(--azul);
+  }
+  .acciones{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  button.principal{
+    background: var(--verde);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.secundario{
+    background: white;
+    color: var(--azul);
+    border: 1px solid var(--azul);
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  #alerta-incompleto{
+    display:none;
+    background: #fdeeea;
+    color: #c1553e;
+    border: 1px solid #f0c4b8;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+  }
+  #pantallaFinal{ display:none; }
+  .codigo-box{
+    background: #f4f6f7;
+    border: 2px dashed var(--azul);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+    margin: 14px 0;
+    color: var(--texto);
+  }
+  .progreso{
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--borde);
+    font-size: 0.85rem;
+    color: var(--gris);
+    text-align: center;
+  }
+  #copiadoMsg{ color: var(--verde); font-weight:600; font-size:0.9rem; display:none; margin-top:8px; }
+
+  .ig-badge{
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 1000;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background: white;
+    border: 1px solid var(--borde);
+    padding: 7px 14px 7px 7px;
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+    text-decoration:none;
+    color: var(--texto);
+    font-size:0.78rem;
+    font-weight:700;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .ig-badge:hover{ box-shadow: 0 4px 16px rgba(0,0,0,0.2); transform: translateY(-1px); }
+  .ig-badge-icon{
+    width:26px; height:26px; border-radius:8px;
+    background: linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .ig-badge-icon svg{ width:15px; height:15px; }
+  @media print{ .ig-badge{ display:none; } }
+</style>
+</head>
+<body>
+<a href="https://www.instagram.com/psicope.yesicarojas" target="_blank" rel="noopener noreferrer" class="ig-badge" title="Seguime en Instagram">
+  <span class="ig-badge-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+  </span>
+  <span>@psicope.yesicarojas</span>
+</a>
+
+
+<header>
+  <h1>Cuestionario LASSI</h1>
+  <p>Inventario de Estrategias de Aprendizaje y Hábitos de Estudio</p>
+</header>
+
+<div class="progreso" id="barraProgreso">0 / 77 completados</div>
+
+<div class="container">
+
+  <div class="card" id="pantallaForm">
+    <div style="margin-bottom:16px;">
+      <label for="nombrePaciente">Tu nombre y apellido</label>
+      <input type="text" id="nombrePaciente" placeholder="Escribí tu nombre completo">
+    </div>
+
+    <div class="leyenda">
+      A continuación vas a encontrar 77 frases relacionadas con el estudio. Para cada una, elegí el número que
+      mejor describe lo que te pasa a vos, según esta escala:
+      <br><br>
+      <b>5</b> = Nunca me pasa &nbsp;·&nbsp;
+      <b>4</b> = Algunas veces &nbsp;·&nbsp;
+      <b>3</b> = A veces sí, a veces no &nbsp;·&nbsp;
+      <b>2</b> = Frecuentemente me pasa &nbsp;·&nbsp;
+      <b>1</b> = Siempre me pasa
+      <br><br>
+      No hay respuestas correctas ni incorrectas. Respondé lo que realmente pensás o sentís sobre vos, no lo que
+      te gustaría que fuera. Tratá de completar todas las frases sin dejar ninguna en blanco.
+    </div>
+
+    <div id="itemsContainer"></div>
+
+    <div id="alerta-incompleto">Todavía faltan frases por completar. Revisá las que quedaron sin marcar.</div>
+
+    <div class="acciones">
+      <button class="principal" onclick="finalizar()">Terminé, generar mi código</button>
+      <button class="secundario" onclick="reiniciar()">Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="card" id="pantallaFinal">
+    <h2 style="color:var(--azul); margin-top:0;">¡Listo, terminaste!</h2>
+    <p>Copiá el siguiente código y enviáselo a tu psicopedagoga por WhatsApp o mail. Con eso ella va a poder cargar
+    tus resultados. No hace falta que lo entiendas ni que lo edites, solo copiarlo y pegarlo tal cual.</p>
+
+    <div class="codigo-box" id="codigoGenerado"></div>
+
+    <div class="acciones">
+      <button class="principal" onclick="copiarCodigo()">Copiar código</button>
+    </div>
+    <p id="copiadoMsg">Código copiado ✓</p>
+  </div>
+
+</div>
+
+<script>
+const items = [
+  "me preocupa salir aplazado/a en un examen.",
+  "durante una clase, puedo distinguir entre una información importante y otra poco importante.",
+  "me resulta difícil ajustarme a un programa de estudios.",
+  "después de clase releo mis apuntes para comprender mejor la información.",
+  "pienso que casarme es más importante que terminar la carrera.",
+  "durante las clases pienso en otras cosas, no presto atención.",
+  "utilizo los títulos y las letras en bastardilla que figuran en los libros como ayuda en mis estudios.",
+  "trato de identificar los temas principales de la clase que se está dando.",
+  "una mala nota ya me desanima.",
+  "estoy al día con mis estudios.",
+  "problemas ajenos a mis estudios (afectivos, laborales) me impiden estudiar bien.",
+  "al ponerme a estudiar algo, pienso en lo que debería saber sobre el tema.",
+  "aun cuando lo que tenga que estudiar sea aburrido, me las arreglo para seguir trabajando hasta terminar.",
+  "estoy confundido/a, no sé qué quiero conseguir estudiando.",
+  "comprendo mejor ideas o palabras si imagino una situación real en la que se dan.",
+  "voy a las clases sin haber estudiado o leído.",
+  "cuando me preparo para un examen, invento preguntas que imagino que me formularán.",
+  "sería mejor que no estudiara.",
+  "me es útil subrayar cuando releo los textos.",
+  "me va mal en las pruebas porque me es difícil organizar un trabajo en poco tiempo.",
+  "trato de imaginar preguntas de los exámenes al releer el material de las clases.",
+  "solamente estudio cuando tengo un examen.",
+  "trato de decir con mis propias palabras lo que estoy estudiando.",
+  "comparo mis apuntes con los de otros compañeros para asegurarme que están completos.",
+  "cuando estudio me pongo muy tenso/a.",
+  "releo mis apuntes antes de ir a la clase siguiente.",
+  "estoy poco capacitado/a para resumir lo que leo o escucho.",
+  "me esfuerzo en obtener buenas notas aunque no me guste la materia.",
+  "tengo la sensación de tener poco control sobre mis estudios.",
+  "me detengo periódicamente al leer y reviso mentalmente si entendí lo que leí.",
+  "aunque esté muy bien preparado/a, me siento muy ansioso/a al dar un examen.",
+  "cuando estoy estudiando un tema, trato de entenderlo en su totalidad.",
+  "cuando no estudio, trato de buscar excusas.",
+  "me cuesta trabajo imaginar qué tengo que hacer para aprender el material, cuando estoy estudiando.",
+  "cuando comienzo a rendir un examen, confío en que me irá bien.",
+  "cuando empiezo a estudiar, las demoras y las interrupciones me causan problemas.",
+  "trato de verificar si comprendo lo que el profesor dice durante las clases.",
+  "me interesa poco saber cultura general, solo deseo conseguir un buen trabajo.",
+  "me resulta imposible concentrarme cuando estoy de mal humor o me falta descanso.",
+  "trato de relacionar lo que estoy estudiando con lo que ya sé.",
+  "estudiando, trato de alcanzar metas altas.",
+  "en casi todos los exámenes, me falta tiempo para terminarlos.",
+  "me es difícil prestar atención durante las clases.",
+  "cuando leo, señalo de alguna manera las partes que me interesan.",
+  "solo estudio las materias que me gustan.",
+  "me distraigo de mis estudios con mucha facilidad.",
+  "trato de relacionar lo que estudio con mis experiencias personales.",
+  "uso bien las horas que dedico a estudiar.",
+  "cuando la tarea es difícil, la abandono o solo hago las partes fáciles.",
+  "hago croquis o dibujos que me ayudan a entender lo que estudio.",
+  "me desagradan la mayoría de las actividades que se hacen en clase.",
+  "tengo dificultades para comprender las preguntas de los exámenes.",
+  "hago esquemas o gráficos para resumir los contenidos de una materia.",
+  "la preocupación porque me pueda ir mal, dificulta mi concentración al dar un examen.",
+  "me cuesta entender ciertos temas porque no presto atención.",
+  "leo los textos que me dan en las clases.",
+  "siento pánico cuando tengo que dar un examen importante.",
+  "cuando decido estudiar, dispongo de un tiempo determinado y me ajusto a él.",
+  "al dar un examen, me doy cuenta de que estudié un tema equivocado.",
+  "me resulta difícil decidir qué es lo importante a subrayar en un texto.",
+  "cuando me pongo a estudiar, me concentro totalmente.",
+  "uso los títulos de los capítulos como guías para identificar puntos importantes de lo que estoy leyendo.",
+  "me pongo tan nerviosa/o al dar un examen que al contestar las preguntas no lo hago con todas mis capacidades.",
+  "memorizo reglas, términos técnicos y fórmulas sin entenderlos.",
+  "me tomo examen a mí mismo/a para estar seguro/a que conozco el material que estudié.",
+  "dejo de lado el estudio más de lo debido.",
+  "trato de ver de qué manera podría aplicar lo que estoy estudiando en mi vida cotidiana.",
+  "mi mente divaga mucho cuando trato de estudiar.",
+  "creo que no vale la pena estudiar lo que se enseña en la mayoría de las clases.",
+  "mientras reviso los materiales de una clase, voy haciendo las tareas asignadas.",
+  "tengo dificultades para adecuar mi forma de estudiar a las distintas materias.",
+  "cuando estudio, me pierdo en detalles y no encuentro las ideas centrales.",
+  "cuando es posible, me encuentro con compañeros para repasar en grupo.",
+  "paso demasiado tiempo con mis amigos y ello afecta mis estudios.",
+  "en los exámenes escritos descubro que no entendí lo que me preguntaban y debido a ello saco notas bajas.",
+  "trato de buscar relaciones entre los distintos temas que estoy estudiando.",
+  "tengo dificultades para identificar los puntos importantes en lo que leo."
+];
+
+const contenedor = document.getElementById('itemsContainer');
+const respuestas = {};
+
+for(let numItem = 1; numItem <= 77; numItem++){
+  const fila = document.createElement('div');
+  fila.className = 'item';
+
+  const num = document.createElement('div');
+  num.className = 'item-num';
+  num.textContent = numItem;
+
+  const texto = document.createElement('div');
+  texto.className = 'item-texto';
+  texto.textContent = items[numItem - 1];
+
+  const opciones = document.createElement('div');
+  opciones.className = 'item-opciones';
+  [1,2,3,4,5].forEach(valor => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = valor;
+    btn.onclick = () => marcarRespuesta(numItem, valor, btn, opciones);
+    opciones.appendChild(btn);
+  });
+
+  fila.appendChild(num);
+  fila.appendChild(texto);
+  fila.appendChild(opciones);
+  contenedor.appendChild(fila);
+}
+
+function marcarRespuesta(numItem, valor, btnClickeado, contenedorOpciones){
+  respuestas[numItem] = valor;
+  [...contenedorOpciones.children].forEach(b => b.classList.remove('activo'));
+  btnClickeado.classList.add('activo');
+  actualizarProgreso();
+}
+
+function actualizarProgreso(){
+  const cargados = Object.keys(respuestas).length;
+  document.getElementById('barraProgreso').textContent = cargados + ' / 77 completados';
+}
+
+function reiniciar(){
+  if(!confirm('¿Reiniciar el cuestionario? Se perderán las respuestas cargadas.')) return;
+  Object.keys(respuestas).forEach(k => delete respuestas[k]);
+  document.querySelectorAll('.item-opciones button.activo').forEach(b => b.classList.remove('activo'));
+  actualizarProgreso();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function finalizar(){
+  const faltantes = [];
+  for(let i=1;i<=77;i++){
+    if(!(i in respuestas)) faltantes.push(i);
+  }
+  if(faltantes.length > 0){
+    const alerta = document.getElementById('alerta-incompleto');
+    alerta.style.display = 'block';
+    alerta.textContent = 'Todavía faltan ' + faltantes.length + ' frase(s) por completar (número ' + faltantes.join(', ') + ').';
+    alerta.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('alerta-incompleto').style.display = 'none';
+
+  const nombre = document.getElementById('nombrePaciente').value.trim();
+  const valores = [];
+  for(let i=1;i<=77;i++) valores.push(respuestas[i]);
+
+  const payload = JSON.stringify({ v: 1, nombre: nombre, valores: valores });
+  const codigo = 'LASSI-' + btoa(unescape(encodeURIComponent(payload)));
+
+  document.getElementById('codigoGenerado').textContent = codigo;
+  document.getElementById('pantallaForm').style.display = 'none';
+  document.getElementById('pantallaFinal').style.display = 'block';
+  document.getElementById('barraProgreso').style.display = 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function copiarCodigo(){
+  const codigo = document.getElementById('codigoGenerado').textContent;
+  navigator.clipboard.writeText(codigo).then(() => {
+    document.getElementById('copiadoMsg').style.display = 'block';
+  }).catch(() => {
+    // Fallback: seleccionar el texto para copiar manualmente
+    const range = document.createRange();
+    range.selectNode(document.getElementById('codigoGenerado'));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    alert('Seleccioná el texto y copialo manualmente (Ctrl+C o mantené presionado y "Copiar").');
+  });
+}
+
+actualizarProgreso();
+</script>
+</body>
+</html>
